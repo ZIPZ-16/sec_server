@@ -9,11 +9,17 @@ class Client(threading.Thread):
         self.ip = ip
         self.port = port
 
+    # обработка потока клиента
     def run(self):
+        # получение данных от клиента
         data = self.connection.recv(1024)
+        # применение расшифровки подключения для получения данных
         decodedData = RC5.RC5.decryptBytes(data)
         if data :
+            # получаем информацию от севера в виде JSON
             jData = json.loads(decodedData)
+
+            # выполняем функционал в соответствии с полученным запросом
             if list(jData.keys())[0] == "auth":
                 # авторизация
                 pass

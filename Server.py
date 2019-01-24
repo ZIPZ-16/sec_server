@@ -10,6 +10,7 @@ class Server:
         self.server = None
         self.clients = []
 
+    # открытие сокета
     def open_socket(self):
         try:
             self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,6 +20,7 @@ class Server:
                 self.server.close()
             sys.exit(1)
 
+    # обработка запуска сервера
     def run(self):
         self.open_socket()
         self.server.listen(5)
@@ -26,6 +28,7 @@ class Server:
         while True :
             connection, (ip, port) = self.server.accept()
 
+            # каждое подключение заводим новым потоком для определения сессии пользователя
             c = Client.Client(ip, port, connection)
             c.start()
 
