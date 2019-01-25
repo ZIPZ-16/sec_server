@@ -45,6 +45,7 @@ class Client(threading.Thread):
                                 # возвращаем ответ-разрешение
                                 self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "true"}}'))
                                 # чистим список ошибочных логинов
+                                del self.wrongs[login]
                             else:
                                 if login in list(self.wrongs.keys()):
                                     if self.wrongs[login] <= 3:
@@ -58,8 +59,8 @@ class Client(threading.Thread):
                                     # добавляем счетшик ошибок
                                     self.wrongs.update('{' + login + ' : 1 }')
 
-                                    # возвращаем ответ-запрет
-                                    self.connection.sendall(
+                                # возвращаем ответ-запрет
+                                self.connection.sendall(
                                         RC5.RC5.encryptBytes('{"authaccess" : { "status" : "false"}}'))
                     else:
                         self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "ban", "time" : ' + delta + '}}'))
@@ -70,6 +71,7 @@ class Client(threading.Thread):
                             # возвращаем ответ-разрешение
                             self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "true"}}'))
                             # чистим список ошибочных логинов
+                            del self.wrongs[login]
                         else:
                             if login in list(self.wrongs.keys()):
                                 if self.wrongs[login] <= 3:
@@ -83,8 +85,9 @@ class Client(threading.Thread):
                                 # добавляем счетшик ошибок
                                 self.wrongs.update('{' + login + ' : 1 }')
 
-                                # возвращаем ответ-запрет
-                                self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "false"}}'))
+                            # возвращаем ответ-запрет
+                            self.connection.sendall(
+                                RC5.RC5.encryptBytes('{"authaccess" : { "status" : "false"}}'))
 
             elif list(jData.keys())[0] == "postcode":
                 # проверка почтового кода
