@@ -6,12 +6,14 @@ import threading
 import RC5
 
 class Client(threading.Thread):
-    secure_data = {"identfier" : "secure message"}
+    secure_data = {"user1" : {"1e7f0fsjs7" : "secure message"}}
     logins = {"user1" : "pass1", "user2" : "pass2"}
     emails = {"user1" : "user1@gmail.com", "user2" : "user2@gmail.com"}
     wrongs = {}
     bans = {}
     postcode = 0
+    login = ""
+    password = ""
 
     gmail_user = 'you@gmail.com'
     gmail_password = 'P@ssword!'
@@ -35,29 +37,29 @@ class Client(threading.Thread):
             # выполняем функционал в соответствии с полученным запросом
             if list(jData.keys())[0] == "auth":
                 # авторизация
-                login = jData["auth"]["login"]
+                self.login = jData["auth"]["login"]
                 xorPass = jData["auth"]["pass"]
                 # получаем оригинальный хеш пароля
-                password = (xorPass.encode() ^ 1100).decode()
+                self.password = (xorPass.encode() ^ 1100).decode()
 
                 # проверяем на бан
-                if login in list(self.bans.keys()):
+                if self.login in list(self.bans.keys()):
                     # проверяем актуальность бана и если он уже не актуален чистим базу банов и пускаем
-                    delta = datetime.date.today() - self.bans[login]
+                    delta = datetime.date.today() - self.bans[self.login]
                     if delta >= 0:
-                        del self.bans[login]
+                        del self.bans[self.login]
                         # сверяем данные, если все верно - пускаем дальше
-                        if login in list(self.logins.keys()):
-                            if self.logins[login] == "password":
+                        if self.login in list(self.logins.keys()):
+                            if self.logins[self.login] == "password":
                                 # возвращаем ответ-разрешение
                                 self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "true"}}'))
                                 # чистим список ошибочных логинов
-                                del self.wrongs[login]
+                                del self.wrongs[self.login]
                                 # отправляем почтовый код
                                 self.postcode = random.randrange(99999999)
 
                                 sent_from = self.gmail_user
-                                to = self.emails[login]
+                                to = self.emails[self.login]
                                 subject = 'Сейф'
                                 body = "Ваш проверочный код - " + self.postcode
 
@@ -78,16 +80,16 @@ class Client(threading.Thread):
                                     print("Ошибка почты")
                             else:
                                 if login in list(self.wrongs.keys()):
-                                    if self.wrongs[login] <= 3:
+                                    if self.wrongs[self.login] <= 3:
                                         # меняем счетчик
-                                        self.wrongs[login] = self.wrongs[login] + 1
+                                        self.wrongs[self.login] = self.wrongs[self.login] + 1
                                     else:
                                         # баним
                                         timestamp = datetime.date.today() + datetime.timedelta(seconds=60)
-                                        self.bans.update('{' + login + ' : ' + timestamp + '}')
+                                        self.bans.update('{' + self.login + ' : ' + timestamp + '}')
                                 else:
                                     # добавляем счетшик ошибок
-                                    self.wrongs.update('{' + login + ' : 1 }')
+                                    self.wrongs.update('{' + self.login + ' : 1 }')
 
                                 # возвращаем ответ-запрет
                                 self.connection.sendall(
@@ -96,17 +98,17 @@ class Client(threading.Thread):
                         self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "ban", "time" : ' + delta + '}}'))
                 else:
                     # сверяем данные, если все верно - пускаем дальше
-                    if login in list(self.logins.keys()):
-                        if self.logins[login] == "password":
+                    if self.login in list(self.logins.keys()):
+                        if self.logins[self.login] == "password":
                             # возвращаем ответ-разрешение
                             self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "true"}}'))
                             # чистим список ошибочных логинов
-                            del self.wrongs[login]
+                            del self.wrongs[self.login]
                             # отправляем почтовый код
                             self.postcode = random.randrange(99999999)
 
                             sent_from = self.gmail_user
-                            to = self.emails[login]
+                            to = self.emails[self.login]
                             subject = 'Сейф'
                             body = "Ваш проверочный код - " + self.postcode
 
@@ -126,17 +128,17 @@ class Client(threading.Thread):
                             except:
                                 print("Ошибка почты")
                         else:
-                            if login in list(self.wrongs.keys()):
-                                if self.wrongs[login] <= 3:
+                            if self.login in list(self.wrongs.keys()):
+                                if self.wrongs[self.login] <= 3:
                                     # меняем счетчик
-                                    self.wrongs[login] = self.wrongs[login] + 1
+                                    self.wrongs[self.login] = self.wrongs[self.login] + 1
                                 else:
                                     # баним
                                     timestamp = datetime.date.today() + datetime.timedelta(seconds=60)
-                                    self.bans.update('{' + login + ' : ' + timestamp + '}')
+                                    self.bans.update('{' + self.login + ' : ' + timestamp + '}')
                             else:
                                 # добавляем счетшик ошибок
-                                self.wrongs.update('{' + login + ' : 1 }')
+                                self.wrongs.update('{' + self.login + ' : 1 }')
 
                             # возвращаем ответ-запрет
                             self.connection.sendall(
@@ -152,7 +154,7 @@ class Client(threading.Thread):
                     self.postcode = random.randrange(99999999)
 
                     sent_from = self.gmail_user
-                    to = self.emails[login]
+                    to = self.emails[self.login]
                     subject = 'Сейф'
                     body = "Ваш проверочный код - " + self.postcode
 
@@ -178,7 +180,10 @@ class Client(threading.Thread):
 
             elif list(jData.keys())[0] == "getdata":
                 # попытка получения информации
-                pass
+                if jData["getdata"]["id"] in list(self.secure_data[self.login].keys()):
+                    self.connection.sendall(RC5.RC5.encryptBytes('{"setdata" : { "status" : "true", "data" : ' + self.secure_data[self.login][jData["getdata"]["id"]] + '}}'))
+                else:
+                    self.connection.sendall(RC5.RC5.encryptBytes('{"setdata": {"status": "false"}}'))
             else:
                 # неизвестная команда игнорируется
                 pass
