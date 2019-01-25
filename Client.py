@@ -1,13 +1,20 @@
 import datetime
 import json
+import random
+import smtplib
 import threading
 import RC5
 
 class Client(threading.Thread):
     secure_data = {"identfier" : "secure message"}
     logins = {"user1" : "pass1", "user2" : "pass2"}
+    emails = {"user1" : "user1@gmail.com", "user2" : "user2@gmail.com"}
     wrongs = {}
     bans = {}
+    postcode = 0
+
+    gmail_user = 'you@gmail.com'
+    gmail_password = 'P@ssword!'
 
     def __init__(self, ip, port, connection):
         threading.Thread.__init__(self)
@@ -46,6 +53,29 @@ class Client(threading.Thread):
                                 self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "true"}}'))
                                 # чистим список ошибочных логинов
                                 del self.wrongs[login]
+                                # отправляем почтовый код
+                                self.postcode = random.randrange(99999999)
+
+                                sent_from = self.gmail_user
+                                to = self.emails[login]
+                                subject = 'Сейф'
+                                body = "Ваш проверочный код - " + self.postcode
+
+                                email_text = """\  
+                                                            From: %s  
+                                                            To: %s  
+                                                            Subject: %s
+
+                                                            %s
+                                                            """ % (sent_from, ", ".join(to), subject, body)
+                                try:
+                                    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                                    server.ehlo()
+                                    server.login(self.gmail_user, self.gmail_password)
+                                    server.sendmail(sent_from, to, email_text)
+                                    server.close()
+                                except:
+                                    print("Ошибка почты")
                             else:
                                 if login in list(self.wrongs.keys()):
                                     if self.wrongs[login] <= 3:
@@ -72,6 +102,29 @@ class Client(threading.Thread):
                             self.connection.sendall(RC5.RC5.encryptBytes('{"authaccess" : { "status" : "true"}}'))
                             # чистим список ошибочных логинов
                             del self.wrongs[login]
+                            # отправляем почтовый код
+                            self.postcode = random.randrange(99999999)
+
+                            sent_from = self.gmail_user
+                            to = self.emails[login]
+                            subject = 'Сейф'
+                            body = "Ваш проверочный код - " + self.postcode
+
+                            email_text = """\  
+                            From: %s  
+                            To: %s  
+                            Subject: %s
+
+                            %s
+                            """ % (sent_from, ", ".join(to), subject, body)
+                            try:
+                                server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                                server.ehlo()
+                                server.login(self.gmail_user, self.gmail_password)
+                                server.sendmail(sent_from, to, email_text)
+                                server.close()
+                            except:
+                                print("Ошибка почты")
                         else:
                             if login in list(self.wrongs.keys()):
                                 if self.wrongs[login] <= 3:
@@ -89,9 +142,40 @@ class Client(threading.Thread):
                             self.connection.sendall(
                                 RC5.RC5.encryptBytes('{"authaccess" : { "status" : "false"}}'))
 
-            elif list(jData.keys())[0] == "postcode":
+            elif list(jData.keys())[0] == "postauth":
                 # проверка почтового кода
-                pass
+                if self.postcode == jData["postauth"]["code"]:
+                    # если код совпал то едем дальше
+                    self.connection.sendall(RC5.RC5.encryptBytes('{"ostauth" : { "status" : "true"}}'))
+                else:
+                    # если не совпал, отправляем новый
+                    self.postcode = random.randrange(99999999)
+
+                    sent_from = self.gmail_user
+                    to = self.emails[login]
+                    subject = 'Сейф'
+                    body = "Ваш проверочный код - " + self.postcode
+
+                    email_text = """\  
+                                                From: %s  
+                                                To: %s  
+                                                Subject: %s
+
+                                                %s
+                                                """ % (sent_from, ", ".join(to), subject, body)
+                    try:
+                        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                        server.ehlo()
+                        server.login(self.gmail_user, self.gmail_password)
+                        server.sendmail(sent_from, to, email_text)
+                        server.close()
+                    except:
+                        print("Ошибка почты")
+
+                    self.connection.sendall(RC5.RC5.encryptBytes('{"ostauth" : { "status" : "false"}}'))
+
+
+
             elif list(jData.keys())[0] == "getdata":
                 # попытка получения информации
                 pass
