@@ -22,7 +22,12 @@ class Client(threading.Thread):
             # выполняем функционал в соответствии с полученным запросом
             if list(jData.keys())[0] == "auth":
                 # авторизация
-                pass
+                login = jData["auth"]["login"]
+                xorPass = jData["auth"]["pass"]
+                # получаем оригинальный хеш пароля
+                password = (xorPass.encode() ^ 1100).decode()
+
+
             elif list(jData.keys())[0] == "postcode":
                 # проверка почтового кода
                 pass
