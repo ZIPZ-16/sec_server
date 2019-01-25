@@ -79,7 +79,7 @@ class Client(threading.Thread):
                                 except:
                                     print("Ошибка почты")
                             else:
-                                if login in list(self.wrongs.keys()):
+                                if self.login in list(self.wrongs.keys()):
                                     if self.wrongs[self.login] <= 3:
                                         # меняем счетчик
                                         self.wrongs[self.login] = self.wrongs[self.login] + 1
